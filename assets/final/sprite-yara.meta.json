@@ -1,0 +1,10 @@
+{
+  "tool": "media.generate_image (Muse pipeline)",
+  "snapshot_id": "627deaf0-95f0-4faf-9a9e-a3931eb66870:qm9c2p",
+  "hero": "Yara, a Arqueira",
+  "colors": "moss green + brown",
+  "style_bible": "Painterly Hades-style: bold dark ink outlines, hand-painted shading, warm saturated colors, full-body angled top-down battle sprite, plain dark background, original character, no text.",
+  "status": "APPROVED by Muse (reviewed 2026-10-26, matches portrait)",
+  "usage": "res://assets/final/sprite-yara.webp — battle sprite",
+  "note": "Sprite has a dark background, NOT transparency — art-swap phase must handle it (dark arena + blending, or keying shader). Seed not exposed; snapshot_id is the reproducibility handle."
+}

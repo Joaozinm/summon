@@ -1,0 +1,10 @@
+{
+  "tool": "media.generate_image (Muse pipeline)",
+  "snapshot_id": "69b6f7bb-fbc0-44c8-ab6e-c04d101cdaa5:fvh60z",
+  "subject": "Arena (fundo)",
+  "colors": "dark stone + torchlight",
+  "style_bible": "Painterly Hades-style: bold dark ink outlines, hand-painted shading, warm saturated colors, original content, no text.",
+  "status": "APPROVED by Muse (reviewed 2026-10-26)",
+  "usage": "res://assets/final/arena-fundo.webp — full-screen battle background (arena bounds map to the rune circle)",
+  "note": "Sprite has a dark background, NOT transparency — art-swap phase must handle it (dark arena + blending, or keying shader). Seed not exposed; snapshot_id is the reproducibility handle."
+}

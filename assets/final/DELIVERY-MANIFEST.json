@@ -1,0 +1,84 @@
+{
+  "delivery": "Summon art v1 \u2014 decode each .b64 to its .webp name, then verify sha256",
+  "files": [
+    {
+      "webp": "arena-fundo.webp",
+      "b64": "arena-fundo.webp.b64",
+      "bytes": 189102,
+      "sha256": "3be77644a8980fc5d7a789a790be326d75f71760ade29f6b0f21df49e8607a69"
+    },
+    {
+      "webp": "portrait-brenna.webp",
+      "b64": "portrait-brenna.webp.b64",
+      "bytes": 114466,
+      "sha256": "01c2b8f4ea054d27886e0879fd3c45f11e5a619ac32183edcefa79f5f3dd9670"
+    },
+    {
+      "webp": "portrait-kess.webp",
+      "b64": "portrait-kess.webp.b64",
+      "bytes": 69014,
+      "sha256": "7f5e1d3b3063455299e4b1ab780b080e6f05e584aaa40fa13c2fd4b81960a18e"
+    },
+    {
+      "webp": "portrait-orin.webp",
+      "b64": "portrait-orin.webp.b64",
+      "bytes": 157880,
+      "sha256": "9b530cef9ad859364f06f5a24c4e0df65c316ccc35ce121b77ce336791a023e5"
+    },
+    {
+      "webp": "portrait-yara.webp",
+      "b64": "portrait-yara.webp.b64",
+      "bytes": 146168,
+      "sha256": "9c79823b5d34522c8d781caddd8ae63236df82e6a83ea4b9ddfc517052985dee"
+    },
+    {
+      "webp": "ritual-fundo.webp",
+      "b64": "ritual-fundo.webp.b64",
+      "bytes": 238350,
+      "sha256": "14fe9c3d9cdaa5e8bd189e28b2c20145c18119afd54c5d5bded21801f4a9ff5b"
+    },
+    {
+      "webp": "sprite-brenna.webp",
+      "b64": "sprite-brenna.webp.b64",
+      "bytes": 20796,
+      "sha256": "54ef21d5d1cddad7f00caac113c09b4a52a6c41cc29a1af210708e9a0334c2b7"
+    },
+    {
+      "webp": "sprite-goblin-bruto.webp",
+      "b64": "sprite-goblin-bruto.webp.b64",
+      "bytes": 27998,
+      "sha256": "36055b176f32bccf43ff13d4fb81f916491dfeb49f2c98a39820b441e05d60dd"
+    },
+    {
+      "webp": "sprite-goblin-fundeiro.webp",
+      "b64": "sprite-goblin-fundeiro.webp.b64",
+      "bytes": 21926,
+      "sha256": "67a313d2ec26e9957854aefe915d2aa596a3972392937d912495d85ca0c499dc"
+    },
+    {
+      "webp": "sprite-goblin-rastejante.webp",
+      "b64": "sprite-goblin-rastejante.webp.b64",
+      "bytes": 21044,
+      "sha256": "5988e0917eafdbde75e84b123960ac4ddc6ad586c3d5eff30aa2e454abbe8608"
+    },
+    {
+      "webp": "sprite-kess.webp",
+      "b64": "sprite-kess.webp.b64",
+      "bytes": 16142,
+      "sha256": "2a3b6438cd6bb0ed6ecf02fb6609c2df03d9b5c9a31512192242d1103fbfb90f"
+    },
+    {
+      "webp": "sprite-orin.webp",
+      "b64": "sprite-orin.webp.b64",
+      "bytes": 32344,
+      "sha256": "574fef77e6db040c141c4c1a3cf35e2a742bd19d9db453d70e48de640d165365"
+    },
+    {
+      "webp": "sprite-yara.webp",
+      "b64": "sprite-yara.webp.b64",
+      "bytes": 19816,
+      "sha256": "ffd179118020c2a2a0fd0b83cdf76ee5e60e43ef89cc1ac9ccc5173345ff38ec"
+    }
+  ],
+  "note": "Sprites have dark backgrounds, NOT transparency \u2014 art-swap must handle (dark arena + blending, or keying shader). Arena/ritual are full-screen backgrounds."
+}

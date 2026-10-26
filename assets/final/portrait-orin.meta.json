@@ -1,0 +1,11 @@
+{
+  "tool": "media.generate_image (Muse pipeline)",
+  "snapshot_id": "74aeac3a-6f19-45ae-a4b0-45254b08dcde:fwtiq1",
+  "hero": "Orin, o Oráculo",
+  "colors": "deep blue + gold",
+  "style_bible": "Painterly Hades-style: bold dark ink outlines, hand-painted shading, warm saturated colors on dark smoky background, bust portrait, strong readable silhouette, original character, no text.",
+  "status": "APPROVED by Muse (reviewed 2026-10-26)",
+  "usage": "res://assets/final/portrait-orin.webp — ritual card portrait",
+  "original": "assets/raw/media-generation-portrait-orin-*.png (1600px or as generated)",
+  "note": "Seed not exposed by the media pipeline; snapshot_id is the reproducibility handle."
+}
