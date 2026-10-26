@@ -37,7 +37,8 @@ var hud: BattleHud
 var _hitstop := 0.0
 var _end_timer := -1.0
 var _ground: Node2D
-var _world: Node2D
+var _goblin_layer: Node2D
+var _hero_layer: Node2D
 var _fx: Node2D
 var _arena_tex: Texture2D
 
@@ -49,9 +50,17 @@ func _ready() -> void:
 	var ring := FocusMarker.new()  # on the ground, under the sprites
 	ring.battle = self
 	add_child(ring)
-	_world = Node2D.new()
-	_world.y_sort_enabled = true
-	add_child(_world)
+	# Units: goblins, then hero rings, then heroes on top (each team y-sorted within itself), so
+	# heroes stay readable inside a melee crowd.
+	_goblin_layer = Node2D.new()
+	_goblin_layer.y_sort_enabled = true
+	add_child(_goblin_layer)
+	var rings := HeroRings.new()
+	rings.battle = self
+	add_child(rings)
+	_hero_layer = Node2D.new()
+	_hero_layer.y_sort_enabled = true
+	add_child(_hero_layer)
 	var chevron := FocusMarker.new()  # above the target's head, over everything
 	chevron.battle = self
 	chevron.overhead = true
@@ -85,7 +94,7 @@ func _spawn(id: String, def: Dictionary, team: int, pos: Vector2) -> void:
 	u.brain = _make_brain(def.brain)
 	u.brain.setup(u, self)
 	units.append(u)
-	_world.add_child(u)
+	(_hero_layer if team == Unit.TEAM_HEROES else _goblin_layer).add_child(u)
 
 
 static func _make_brain(kind: String) -> Brain:
