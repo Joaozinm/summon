@@ -28,3 +28,20 @@ O brief de jogo chega por fases; este arquivo guarda só as regras permanentes.
 - Abrir/importar sem editor: `godot --headless --path . --import`
 - Export web: `godot --headless --path . --export-release "Web" build/web/index.html`
   (preset em `export_presets.cfg`; `build/` não é versionado; sem threads, para não exigir COOP/COEP).
+- Executável console (fora do PATH; usado pelo MCP):
+  `C:\Users\User\AppData\Local\Microsoft\WinGet\Packages\GodotEngine.GodotEngine_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_win64_console.exe`
+- **Web export: `variant/thread_support=false` + renderer Compatibility (`gl_compatibility`).**
+  Não mudar sem motivo — threads exigem COOP/COEP no host, e o Mobile renderer não roda na web.
+
+## Ferramentas (MCP)
+
+- **MCP `godot`** = [Coding-Solo/godot-mcp](https://github.com/Coding-Solo/godot-mcp) (MIT, grátis),
+  via `npx @coding-solo/godot-mcp`, com `GODOT_PATH` apontando para o executável console acima.
+  Registrado em `.mcp.json` (escopo de projeto; sem segredos). No Windows o comando é
+  `cmd /c npx -y @coding-solo/godot-mcp` (no Git Bash, use `MSYS_NO_PATHCONV=1` ao rodar
+  `claude mcp add`, senão `/c` vira `C:/`).
+- Excluídos por decisão: Godot MCP Pro (pago) e Summer Engine (fork + conta/créditos).
+- **Como verificar:** `/mcp` (ou `claude mcp list`) deve mostrar `godot … ✔ Connected`. Smoke test:
+  `get_godot_version` → `4.7.2.stable.official.ed1daf0bf`; `list_projects`/`get_project_info` em
+  `C:/projects/summon` → projeto `summon`, 1 cena; `create_scene` + `add_node` numa cena temporária
+  em `build/` (não versionado) e apagá-la em seguida. `git status` deve continuar limpo.
