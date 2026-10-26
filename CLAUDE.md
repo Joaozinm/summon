@@ -45,3 +45,21 @@ O brief de jogo chega por fases; este arquivo guarda só as regras permanentes.
   `get_godot_version` → `4.7.2.stable.official.ed1daf0bf`; `list_projects`/`get_project_info` em
   `C:/projects/summon` → projeto `summon`, 1 cena; `create_scene` + `add_node` numa cena temporária
   em `build/` (não versionado) e apagá-la em seguida. `git status` deve continuar limpo.
+
+## Ferramentas 3D (Fase 0 3D — detalhes e resultados em `docs/fase0-3d.md`)
+
+- **Blender 5.2.3 LTS**, build portátil oficial (sha256 conferido), instalada por usuário em
+  `%LOCALAPPDATA%\Programs\Blender\blender-5.2.3-windows-x64\blender.exe`.
+- **uv 0.13.5** (instalador oficial Astral) em `%USERPROFILE%\.local\bin`.
+- **MCP `blender`** = [ahujasid/mcp-for-blender](https://github.com/ahujasid/mcp-for-blender) (MIT; antigo
+  `blender-mcp`): `cmd /c uvx mcp-for-blender` com `DISABLE_TELEMETRY=true` (desliga até o registro
+  anônimo de uso). Integrações externas (Poly Haven, Sketchfab, Hyper3D, Hunyuan, Meshy) ficam
+  desligadas — várias pedem chave/conta; não ativar sem decisão do João.
+  O addon "MCP for Blender" (v1.8) está ativo nas preferências do Blender e sobe o socket na porta
+  9876 **só com o Blender aberto com janela** (em `--background` ele não inicia).
+- **Como verificar:** `claude mcp list` → `godot` e `blender` ✔ Connected. Smoke do blender (com o
+  Blender aberto): `get_scene_info`; `execute_blender_code` criando primitiva + material e exportando
+  `.glb`; ler a cena de volta. Smoke 3D do godot: `create_scene` raiz `Node3D` + `add_node`
+  `MeshInstance3D` em `build/`, depois apagar.
+- **Testes de shader/asset** (Soft Toon, Kenney etc.) acontecem num projeto de laboratório em
+  `build/3d/lab` (não versionado). Nada baixado entra no repositório sem decisão do João.
