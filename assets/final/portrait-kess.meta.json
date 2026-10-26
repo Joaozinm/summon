@@ -1,0 +1,11 @@
+{
+  "tool": "media.generate_image (Muse pipeline)",
+  "snapshot_id": "0f675f4a-32c7-49e4-b480-2c8d3faf399c:u2dyul",
+  "hero": "Kess, a Duelista",
+  "colors": "shadow violet + black",
+  "style_bible": "Painterly Hades-style: bold dark ink outlines, hand-painted shading, warm saturated colors on dark smoky background, bust portrait, strong readable silhouette, original character, no text.",
+  "status": "APPROVED by Muse (reviewed 2026-10-26)",
+  "usage": "res://assets/final/portrait-kess.webp — ritual card portrait",
+  "original": "assets/raw/media-generation-portrait-kess-*.png (1600px or as generated)",
+  "note": "Seed not exposed by the media pipeline; snapshot_id is the reproducibility handle."
+}

@@ -6,6 +6,12 @@ extends Node2D
 
 const TEAM_HEROES := 0
 const TEAM_GOBLINS := 1
+const FLASH_SHADER := preload("res://scripts/fx/hit_flash.gdshader")
+const GOBLIN_RIM := Color("e09a3a")
+
+## Debug: draw every sprite solid black (silhouette readability test). Set from the command line
+## (`-- --silhouette`) or the web URL (`?silhouette`) by main.gd.
+static var debug_silhouette := false
 
 var id: String
 var def: Dictionary
@@ -34,6 +40,7 @@ var _flash := 0.0
 var _swing := 0.0
 var _swing_dir := Vector2.RIGHT
 var _name_label: Label
+var _sprite: Sprite2D
 
 
 func setup(unit_id: String, unit_def: Dictionary, unit_team: int, owner_battle: Battle) -> void:
@@ -54,6 +61,28 @@ func setup(unit_id: String, unit_def: Dictionary, unit_team: int, owner_battle: 
 
 
 func _ready() -> void:
+	# Draw order: shadow, sprite (both behind this node's _draw), then swing arc + HP bar.
+	var shadow := GroundShadow.new()
+	shadow.radius = radius
+	shadow.position = Vector2(0, _feet())
+	shadow.show_behind_parent = true
+	add_child(shadow)
+	_sprite = Sprite2D.new()
+	_sprite.texture = SpriteMatte.texture(def.sprite)
+	var h := _sprite_height()
+	var s := h / _sprite.texture.get_height()
+	_sprite.scale = Vector2(s, s)
+	_sprite.position = Vector2(0, _feet() + h * 0.04 - h * 0.5)
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	_sprite.show_behind_parent = true
+	var mat := ShaderMaterial.new()
+	mat.shader = FLASH_SHADER
+	var rim: Color = def.color.lightened(0.3) if is_hero() else GOBLIN_RIM
+	mat.set_shader_parameter("outline_color", Color(rim, 0.95))
+	mat.set_shader_parameter("silhouette", debug_silhouette)
+	_sprite.material = mat
+	add_child(_sprite)
+
 	_name_label = Label.new()
 	_name_label.text = def.name
 	var ls := LabelSettings.new()
@@ -63,7 +92,7 @@ func _ready() -> void:
 	_name_label.label_settings = ls
 	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_name_label.size = Vector2(120, 18)
-	_name_label.position = Vector2(-60, -_top() - 34)
+	_name_label.position = Vector2(-60, -_top() - 30)
 	_name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_name_label)
 
@@ -101,6 +130,7 @@ func tick(delta: float) -> void:
 	attack_cd = maxf(0.0, attack_cd - delta)
 	heal_cd = maxf(0.0, heal_cd - delta)
 	_flash = maxf(0.0, _flash - delta * 5.0)
+	_sprite.material.set_shader_parameter("flash", _flash)
 	_swing = maxf(0.0, _swing - delta)
 	move_dir = Vector2.ZERO
 	brain.think(delta)
@@ -136,6 +166,7 @@ func take_hit(amount: float, from: Unit) -> void:
 	last_hit_time = battle.time
 	last_attacker = from
 	_flash = 1.0
+	_sprite.material.set_shader_parameter("flash", _flash)
 
 
 func restore(amount: float) -> float:
@@ -152,48 +183,54 @@ func die() -> void:
 	tw.tween_callback(func() -> void: visible = false)
 
 
-# --- PLACEHOLDER TEMPORÁRIO — substituído pela arte final da Muse. -----------------------------
-# Heroes: capsule in identity color with accent outline/belt. Goblins: circles.
+# --- Visuals: the Muse's battle sprite (backdrop cut by SpriteMatte), ground shadow, swing arc and
+# HP bar. The unit position is the feet; the sprite stands above it.
 
+func _sprite_height() -> float:
+	return def.sprite_height
+
+
+## Feet line (shadow centre), relative to the unit position.
+func _feet() -> float:
+	return radius * 0.9
+
+
+## Distance from the unit position up to the top of the sprite's figure.
 func _top() -> float:
-	return radius * 1.35 if is_hero() else radius
+	return _sprite_height() * 0.92 - _feet()
+
+
+## Mid-body point in world space, where hit/heal feedback appears.
+func chest() -> Vector2:
+	return position + Vector2(0, -_top() * 0.5)
+
+
+## Visible body, in local coordinates (used for tap hit-testing).
+func body_rect() -> Rect2:
+	var h := _sprite_height()
+	return Rect2(-h * 0.25, -_top(), h * 0.5, _top() + _feet())
 
 
 func _draw() -> void:
-	var body: Color = def.color
-	var accent: Color = def.accent
-	if _flash > 0.0:
-		body = body.lerp(Color.WHITE, _flash)
-		accent = accent.lerp(Color.WHITE, _flash * 0.7)
-	draw_set_transform(Vector2(0, radius * 0.9), 0.0, Vector2(1.0, 0.35))
-	draw_circle(Vector2.ZERO, radius * 1.05, Color(0, 0, 0, 0.35))  # ground shadow
-	draw_set_transform(Vector2.ZERO)
-	if is_hero():
-		var half := radius * 0.35
-		_capsule(half, radius + 3.0, accent)
-		_capsule(half, radius, body)
-		draw_rect(Rect2(-radius, -2.0, radius * 2.0, 4.0), accent)
-	else:
-		draw_circle(Vector2.ZERO, radius + 3.0, accent)
-		draw_circle(Vector2.ZERO, radius, body)
-		if is_ranged():
-			draw_arc(Vector2.ZERO, radius * 0.55, 0.0, TAU, 20, accent, 2.0)
 	if _swing > 0.0:
 		var a := _swing_dir.angle()
-		draw_arc(Vector2.ZERO, radius + 14.0, a - 0.9, a + 0.9, 12,
+		draw_arc(Vector2(0, -_top() * 0.4), radius + 18.0, a - 0.9, a + 0.9, 12,
 				Color(1, 1, 1, _swing / 0.14 * 0.8), 3.0)
 	_draw_hp_bar()
 
 
-func _capsule(half: float, r: float, c: Color) -> void:
-	draw_circle(Vector2(0, -half), r, c)
-	draw_circle(Vector2(0, half), r, c)
-	draw_rect(Rect2(-r, -half, r * 2.0, half * 2.0), c)
-
-
 func _draw_hp_bar() -> void:
 	var w := maxf(36.0, radius * 2.4)
-	var y := -_top() - 14.0
+	var y := -_top() - 10.0
 	draw_rect(Rect2(-w / 2 - 1, y - 1, w + 2, 7), Color(0, 0, 0, 0.8))
 	var fill := Color("4fd06a") if is_hero() else Color("e0483c")
 	draw_rect(Rect2(-w / 2, y, w * hp_ratio(), 5), fill)
+
+
+## Soft ellipse under the feet.
+class GroundShadow extends Node2D:
+	var radius := 16.0
+
+	func _draw() -> void:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.35))
+		draw_circle(Vector2.ZERO, radius * 1.25, Color(0, 0, 0, 0.45))

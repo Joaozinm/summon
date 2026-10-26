@@ -1,7 +1,7 @@
 class_name HeroCard
 extends Control
 ## Ritual card with a standardized frame drawn in code. Face-down until tapped; tapping
-## "invokes" the hero (flip + bell). The portrait is a PLACEHOLDER rectangle in the hero color.
+## "invokes" the hero (flip + bell). The revealed face shows the Muse's portrait of the hero.
 
 signal invoked(card: HeroCard)
 
@@ -13,6 +13,7 @@ const BG := Color("1a1c22")
 var hero_id: String
 var def: Dictionary
 var revealed := false
+var _portrait: Texture2D
 var _flipping := false
 var _flash := 0.0
 
@@ -20,6 +21,7 @@ var _flash := 0.0
 func _init(id: String) -> void:
 	hero_id = id
 	def = Defs.HEROES[id]
+	_portrait = load(def.portrait)
 	custom_minimum_size = SIZE
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -72,9 +74,8 @@ func _draw() -> void:
 	draw_rect(r.grow(-12), FRAME_DARK, false, 2.0)
 
 	if revealed:
-		# PLACEHOLDER TEMPORÁRIO — substituído pela arte final da Muse (retrato do herói).
 		var portrait := Rect2(24, 24, SIZE.x - 48, 236)
-		draw_rect(portrait, def.color)
+		draw_texture_rect_region(_portrait, portrait, _cover_region(portrait.size))
 		draw_rect(portrait, def.accent, false, 4.0)
 		draw_string(font, Vector2(0, 300), def.name, HORIZONTAL_ALIGNMENT_CENTER, SIZE.x, 30)
 		draw_string(font, Vector2(0, 332), def.role, HORIZONTAL_ALIGNMENT_CENTER, SIZE.x, 19,
@@ -102,3 +103,17 @@ func _draw() -> void:
 
 	if _flash > 0.0:
 		draw_rect(r, Color(1, 1, 1, _flash * 0.8))
+
+
+## Source region of the portrait that covers `target` without distortion, kept near the top so
+## the face stays in frame (portraits are 1:1, Kess's is 1:2).
+func _cover_region(target: Vector2) -> Rect2:
+	var ts := _portrait.get_size()
+	var want := target.x / target.y
+	var w := ts.x
+	var h := w / want
+	if h > ts.y:
+		h = ts.y
+		w = h * want
+	var top := clampf(ts.y * 0.06, 0.0, ts.y - h) if ts.y > ts.x * 1.2 else (ts.y - h) * 0.2
+	return Rect2((ts.x - w) * 0.5, top, w, h)

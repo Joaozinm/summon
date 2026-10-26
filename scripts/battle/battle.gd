@@ -6,6 +6,7 @@ extends Node2D
 signal finished(victory: bool, stats: Dictionary)
 
 const ARENA := Rect2(0, 0, 1200, 1800)
+const ARENA_ART := "res://assets/final/arena-fundo.webp"
 const HITSTOP_SCALE := 0.08
 const END_DELAY := 1.4
 const HERO_SPAWNS := {
@@ -38,18 +39,24 @@ var _end_timer := -1.0
 var _ground: Node2D
 var _world: Node2D
 var _fx: Node2D
+var _arena_tex: Texture2D
 
 
 func _ready() -> void:
+	_arena_tex = load(ARENA_ART)
 	_ground = Node2D.new()
 	add_child(_ground)
+	var ring := FocusMarker.new()  # on the ground, under the sprites
+	ring.battle = self
+	add_child(ring)
 	_world = Node2D.new()
 	_world.y_sort_enabled = true
 	add_child(_world)
-	var marker := FocusMarker.new()
-	marker.battle = self
-	marker.z_index = 10
-	add_child(marker)
+	var chevron := FocusMarker.new()  # above the target's head, over everything
+	chevron.battle = self
+	chevron.overhead = true
+	chevron.z_index = 10
+	add_child(chevron)
 	_fx = Node2D.new()
 	_fx.z_index = 20
 	add_child(_fx)
@@ -199,8 +206,8 @@ func deal_damage(src: Unit, tgt: Unit, amount: float) -> void:
 	tgt.take_hit(amount, src)
 	var heavy := amount >= Defs.HEAVY_HIT
 	var color := Color.WHITE if tgt.team == Unit.TEAM_GOBLINS else Color("ff9b6b")
-	Fx.damage_number(_fx, tgt.position, str(roundi(amount)), color, heavy)
-	Fx.burst(_fx, tgt.position, tgt.def.color.lightened(0.35), 14 if heavy else 8)
+	Fx.damage_number(_fx, tgt.chest(), str(roundi(amount)), color, heavy)
+	Fx.burst(_fx, tgt.chest(), tgt.def.color.lightened(0.35), 14 if heavy else 8)
 	if heavy:
 		Sfx.play(&"impacto_pesado")
 		camera.shake(9.0)
@@ -214,10 +221,10 @@ func deal_damage(src: Unit, tgt: Unit, amount: float) -> void:
 func heal(src: Unit, tgt: Unit, amount: float) -> void:
 	var gained := tgt.restore(amount)
 	track("orin_heals")
-	Fx.damage_number(_fx, tgt.position, "+%d" % roundi(gained), Color("7dff9a"))
+	Fx.damage_number(_fx, tgt.chest(), "+%d" % roundi(gained), Color("7dff9a"))
 	if src != tgt:
-		Fx.beam(_fx, src.position, tgt.position, Color(src.def.accent, 0.9))
-	Fx.burst(_fx, tgt.position, Color("9dffb0"), 6, 80.0)
+		Fx.beam(_fx, src.chest(), tgt.chest(), Color(src.def.accent, 0.9))
+	Fx.burst(_fx, tgt.chest(), Color("9dffb0"), 6, 80.0)
 	Sfx.play(&"cura")
 
 
@@ -235,7 +242,7 @@ func _kill(victim: Unit, killer: Unit) -> void:
 	Sfx.play(&"morte")
 	camera.shake(6.0)
 	hitstop(0.09)
-	Fx.burst(_fx, victim.position, victim.def.color, 22, 200.0)
+	Fx.burst(_fx, victim.chest(), victim.def.color, 22, 200.0)
 	Fx.tombstone(_ground, victim.position)
 	GameLog.event("kill %s by %s" % [victim.def.name, killer.def.name if killer else "-"])
 	if killer != null and not killer.dead:
@@ -321,12 +328,17 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+## Goblin under a tap: anywhere on its visible sprite body (or near its feet), nearest first.
 func goblin_at(world: Vector2) -> Unit:
 	var best: Unit = null
 	var best_d := INF
 	for g in alive(Unit.TEAM_GOBLINS):
-		var d := g.position.distance_to(world)
-		if d <= g.radius + 28.0 and d < best_d:
+		var local := world - g.position
+		var on_body := g.body_rect().grow(10.0).has_point(local)
+		if not on_body and local.length() > g.radius + 28.0:
+			continue
+		var d := world.distance_to(g.chest())
+		if d < best_d:
 			best_d = d
 			best = g
 	return best
@@ -338,21 +350,32 @@ func debug_defeat() -> void:
 		deal_damage(null, h, 9999.0)
 
 
-# PLACEHOLDER TEMPORÁRIO — substituído pela arte final da Muse (arena floor from primitives).
+## Arena floor: the Muse's arena art, scaled uniformly to the arena height (the rune circle's top and
+## bottom map to the arena bounds); the sides are cropped and softened into the dark surround.
 func _draw() -> void:
-	draw_rect(ARENA.grow(600), Color("0e1014"))
-	draw_rect(ARENA, Color("22252c"))
-	var grid := Color(1, 1, 1, 0.035)
-	for x in range(100, int(ARENA.size.x), 100):
-		draw_line(Vector2(x, 0), Vector2(x, ARENA.size.y), grid, 2.0)
-	for y in range(100, int(ARENA.size.y), 100):
-		draw_line(Vector2(0, y), Vector2(ARENA.size.x, y), grid, 2.0)
-	draw_rect(ARENA, Color("4a4f59"), false, 8.0)
+	draw_rect(ARENA.grow(600), Color("0b0c0f"))
+	var ts := _arena_tex.get_size()
+	var k := ARENA.size.y / ts.y
+	var src_w := minf(ts.x, ARENA.size.x / k)
+	# Dimmed so the characters read first.
+	draw_texture_rect_region(_arena_tex, ARENA, Rect2((ts.x - src_w) * 0.5, 0.0, src_w, ts.y),
+			Color(0.55, 0.57, 0.62))
+	var edge := Color(0.043, 0.047, 0.059, 0.85)
+	var clear := Color(edge, 0.0)
+	var band := 140.0
+	draw_polygon(PackedVector2Array([ARENA.position, ARENA.position + Vector2(band, 0),
+			Vector2(band, ARENA.end.y), Vector2(0, ARENA.end.y)]),
+			PackedColorArray([edge, clear, clear, edge]))
+	draw_polygon(PackedVector2Array([Vector2(ARENA.end.x - band, 0), Vector2(ARENA.end.x, 0),
+			ARENA.end, Vector2(ARENA.end.x - band, ARENA.end.y)]),
+			PackedColorArray([clear, edge, edge, clear]))
+	draw_rect(ARENA, Color(0, 0, 0, 0.6), false, 6.0)
 
 
-## Pulsing ring over the FOCAR target.
+## FOCAR target marker: a pulsing ground ring under the target, or (overhead) a chevron above it.
 class FocusMarker extends Node2D:
 	var battle: Battle
+	var overhead := false
 	var _t := 0.0
 
 	func _process(delta: float) -> void:
@@ -363,9 +386,14 @@ class FocusMarker extends Node2D:
 		if not battle.focus_active():
 			return
 		var g := battle.focus_target
-		var r := g.radius + 12.0 + sin(_t * 8.0) * 3.0
 		var c := Color("ff3b3b")
-		draw_arc(g.position, r, 0.0, TAU, 40, c, 3.0)
+		if overhead:
+			var tip := g.position + Vector2(0, g.body_rect().position.y - 38.0 + sin(_t * 6.0) * 4.0)
+			draw_colored_polygon(PackedVector2Array([tip, tip + Vector2(-11, -14), tip + Vector2(11, -14)]), c)
+			return
+		var r := g.radius + 14.0 + sin(_t * 8.0) * 3.0
+		draw_set_transform(g.position + Vector2(0, g.radius * 0.9), 0.0, Vector2(1.0, 0.45))
+		draw_arc(Vector2.ZERO, r, 0.0, TAU, 40, c, 4.0)
 		for k in 4:
 			var dir := Vector2.RIGHT.rotated(k * PI / 2.0 + _t * 1.5)
-			draw_line(g.position + dir * (r + 2.0), g.position + dir * (r + 12.0), c, 3.0)
+			draw_line(dir * (r + 2.0), dir * (r + 12.0), c, 4.0)

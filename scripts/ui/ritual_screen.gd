@@ -11,10 +11,18 @@ var _counter: Label
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var bg := ColorRect.new()
-	bg.color = Color("121318")
+	var bg := TextureRect.new()  # the Muse's ritual art, cover-scaled (rune circle centred)
+	bg.texture = load("res://assets/final/ritual-fundo.webp")
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	var dim := ColorRect.new()  # keeps the title and cards readable over the art
+	dim.color = Color(0, 0, 0, 0.45)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(dim)
 
 	var box := VBoxContainer.new()
 	box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -52,6 +60,17 @@ func _ready() -> void:
 	fb.add_child(fight_button)
 	_refresh()
 	GameLog.event("screen ritual")
+	_warm_battle_sprites()
+
+
+## Cut the battle sprites' backdrops now (one per frame) so the battle starts without a hitch.
+func _warm_battle_sprites() -> void:
+	for table: Dictionary in [Defs.HEROES, Defs.GOBLINS]:
+		for id: String in table:
+			if not is_inside_tree():
+				return
+			SpriteMatte.texture(table[id].sprite)
+			await get_tree().process_frame
 
 
 func invoked_count() -> int:
@@ -62,6 +81,8 @@ func _label(text: String, size: int) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_outline_color", Color.BLACK)
+	l.add_theme_constant_override("outline_size", 6)
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return l
 
