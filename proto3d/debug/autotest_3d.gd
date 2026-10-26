@@ -27,7 +27,9 @@ static func batch_count() -> int:
 
 
 func _ready() -> void:
-	if batch > 0:
+	if flag("framing-probe"):
+		_run_framing_probe()
+	elif batch > 0:
 		_run_batch()
 	else:
 		_run_e2e()
@@ -172,3 +174,104 @@ func _run_batch() -> void:
 			dsum += float(r.heroes_total) - float(r.heroes_alive)
 		GameLog.event("BATCH3D SUMMARY %s n=%d avg_time=%.1fs wins=%d/%d avg_deaths=%.2f" % [policy, n, tsum / n, wins, n, dsum / n])
 	get_tree().quit(0)
+
+
+# --- framing / label probe (windowed, 720x1280) ----------------------------------------------
+
+## Per physics frame of a full battle: does any hero (body + ring) touch the FOCAR button area,
+## does any goblin sit under the top panel, do any two unit labels overlap? Then a crowd shot.
+func _run_framing_probe() -> void:
+	var out_dir := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--shots="):
+			out_dir = a.trim_prefix("--shots=")
+	for policy in ["sem_foco", "foco_fundeiro"]:
+		var b := Battle3D.new()
+		b.hero_ids = Defs.HERO_ORDER.duplicate()
+		main.add_child(b)
+		await get_tree().physics_frame
+		var frames := 0
+		var hero_on_button := 0
+		var goblin_under_top := 0
+		var label_overlaps := 0
+		var worst_gap := INF
+		var max_extra := 0.0
+		var pulled := 0
+		while not b.decided() and b.time < BATTLE_TIMEOUT:
+			if policy == "foco_fundeiro" and b.focus_ready():
+				var pick: Unit3D = null
+				for g in b.alive(1):
+					if pick == null or (g.id == "fundeiro" and pick.id != "fundeiro"):
+						pick = g
+				b.request_focus(pick)
+			await get_tree().process_frame
+			frames += 1
+			max_extra = maxf(max_extra, b.camera.extra)
+			pulled += int(b.camera.extra > 0.5)
+			var area := b.hud.focus_area()
+			var touched := false
+			for h in b.alive(0):
+				var r := _screen_rect(b.camera.cam, h)
+				worst_gap = minf(worst_gap, area.position.y - r.end.y)
+				if r.intersects(area):
+					touched = true
+			hero_on_button += int(touched)
+			var top := b.hud.top_panel.get_global_rect()
+			var under := false
+			for g in b.alive(1):
+				if _screen_rect(b.camera.cam, g).intersects(top):
+					under = true
+			goblin_under_top += int(under)
+			var rects := b.hud.overlay.last_rects
+			for i in rects.size():
+				for j in range(i + 1, rects.size()):
+					if rects[i].intersects(rects[j]):
+						label_overlaps += 1
+		GameLog.event("FRAMING %s frames=%d hero_on_focus_button=%d goblin_under_top_panel=%d label_overlaps=%d min_gap_to_button=%.0fpx pulled_back_frames=%d max_extra=%.1fm viewport=%s" % [
+				policy, frames, hero_on_button, goblin_under_top, label_overlaps, worst_gap, pulled, max_extra,
+				get_viewport().get_visible_rect().size])
+		b.free()
+	if out_dir != "":
+		await _crowd_shot(out_dir)
+	get_tree().quit(0)
+
+
+func _screen_rect(cam: Camera3D, u: Unit3D) -> Rect2:
+	var head := cam.unproject_position(u.head())
+	var feet := cam.unproject_position(u.global_position + Vector3(0, 0, u.radius + 0.45))  # ring front edge
+	var hgt := maxf(feet.y - head.y, 1.0)
+	return Rect2(head.x - hgt * 0.3, head.y, hgt * 0.6, hgt)
+
+
+## The 4 heroes and the melee goblins packed together (test setup), to prove labels stay apart.
+func _crowd_shot(dir: String) -> void:
+	var b := Battle3D.new()
+	b.hero_ids = Defs.HERO_ORDER.duplicate()
+	main.add_child(b)
+	await get_tree().physics_frame
+	var spots := [Vector3(0, 0, 0), Vector3(0.9, 0, 0.3), Vector3(-0.9, 0, 0.4), Vector3(0.2, 0, 1.0),
+			Vector3(-0.5, 0, -0.8), Vector3(0.7, 0, -0.9), Vector3(0.0, 0, -1.8), Vector3(-3.5, 0, -6.0), Vector3(3.5, 0, -6.0)]
+	var order := ["brenna", "kess", "yara", "orin", "rastejante", "rastejante", "bruto", "fundeiro", "fundeiro"]
+	var used := []
+	for k in order.size():
+		for u in b.units:
+			if u.id == order[k] and not used.has(u):
+				u.global_position = spots[k]
+				used.append(u)
+				break
+	b.process_mode = Node.PROCESS_MODE_DISABLED  # freeze the sim for the shot; camera + HUD keep running
+	b.camera.process_mode = Node.PROCESS_MODE_ALWAYS
+	b.hud.process_mode = Node.PROCESS_MODE_ALWAYS
+	for i in 45:
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	var path := "%s/%s_crowd.png" % [dir, RenderingServer.get_current_rendering_method()]
+	get_viewport().get_texture().get_image().save_png(path)
+	var rects := b.hud.overlay.last_rects
+	var overlaps := 0
+	for i in rects.size():
+		for j in range(i + 1, rects.size()):
+			if rects[i].intersects(rects[j]):
+				overlaps += 1
+	GameLog.event("CROWD SHOT %s labels=%d overlaps=%d" % [path, rects.size(), overlaps])
+	b.free()

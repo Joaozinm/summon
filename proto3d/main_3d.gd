@@ -1,7 +1,7 @@
 extends Node
 ## 3D prototype flow: ritual (v1 screen, reused as-is) → Battle3D → result (v1 screen) → ritual.
 ## Debug: `-- --autotest3d` / `?autotest3d` (end-to-end self-play), `-- --proto-batch=N` (N headless
-## battles per FOCAR policy, prints stats).
+## battles per FOCAR policy, prints stats), `-- --framing-probe` (HUD/label overlap measurement).
 
 var ritual: RitualScreen
 var battle: Battle3D
@@ -20,8 +20,9 @@ func _ready() -> void:
 		b.batch = batch
 		add_child(b)
 		return
-	show_ritual()
-	if Autotest3D.flag("autotest3d"):
+	if not Autotest3D.flag("framing-probe"):
+		show_ritual()
+	if Autotest3D.flag("autotest3d") or Autotest3D.flag("framing-probe"):
 		var t := Autotest3D.new()
 		t.main = self
 		add_child(t)

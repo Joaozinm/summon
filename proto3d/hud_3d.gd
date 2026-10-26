@@ -5,6 +5,8 @@ extends CanvasLayer
 
 var battle: Battle3D
 var focus_button: Button
+var overlay: UnitOverlay
+var top_panel: Control
 var _focus_bar: ProgressBar
 var _hint: Label
 var _goblins: Label
@@ -16,7 +18,7 @@ func _ready() -> void:
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
-	var overlay := UnitOverlay.new()
+	overlay = UnitOverlay.new()
 	overlay.battle = battle
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(overlay)
@@ -28,6 +30,7 @@ func _ready() -> void:
 	top.offset_top = 12
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(top)
+	top_panel = top
 	var bars := HeroRows.new()
 	bars.battle = battle
 	top.add_child(bars)
@@ -54,6 +57,11 @@ func _ready() -> void:
 	_focus_bar.show_percentage = false
 	bottom.add_child(_focus_bar)
 	_refresh()
+
+
+## Screen area of the FOCAR button + its bar (heroes must never sit under it).
+func focus_area() -> Rect2:
+	return focus_button.get_global_rect().merge(_focus_bar.get_global_rect())
 
 
 func _label(size: int) -> Label:
@@ -124,9 +132,17 @@ class HeroRows extends Control:
 			draw_string(font, Vector2(size.x - 92, y + 19), txt, HORIZONTAL_ALIGNMENT_RIGHT, 92, 16, Color(1, 1, 1, a))
 
 
-## Names + HP bars projected above every living unit.
+## Names + HP bars projected above every living unit. Labels never overlap: they are placed
+## bottom-up and a label that would collide with one already placed is lifted just enough, with a
+## thin leader line back to its unit's head.
 class UnitOverlay extends Control:
+	const FONT_SIZE := 14
+	const BAR_W := 46.0
+	const GAP := 2.0
+
 	var battle: Battle3D
+	## Screen rects of the labels drawn last frame (the autotest checks they never overlap).
+	var last_rects: Array[Rect2] = []
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -139,14 +155,41 @@ class UnitOverlay extends Control:
 		if cam == null:
 			return
 		var font := get_theme_default_font()
+		var items: Array[Dictionary] = []
 		for u in battle.units:
 			if u.dead or cam.is_position_behind(u.head()):
 				continue
-			var p := cam.unproject_position(u.head())
-			var w := 46.0
-			draw_rect(Rect2(p.x - w / 2 - 1, p.y - 1, w + 2, 7), Color(0, 0, 0, 0.8))
-			draw_rect(Rect2(p.x - w / 2, p.y, w * u.hp_ratio(), 5),
+			var anchor := cam.unproject_position(u.head())
+			var w := maxf(BAR_W, font.get_string_size(u.def.name, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x) + 6.0
+			var h := FONT_SIZE + 9.0  # name line + bar
+			items.append({"u": u, "anchor": anchor, "rect": Rect2(anchor.x - w / 2, anchor.y - h + 6.0, w, h)})
+		items.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.anchor.y > b.anchor.y)
+		var placed: Array[Rect2] = []
+		for it in items:
+			var r: Rect2 = it.rect
+			var moved := true
+			while moved:
+				moved = false
+				for q in placed:
+					if r.grow(GAP).intersects(q):
+						r.position.y = q.position.y - r.size.y - GAP
+						moved = true
+			placed.append(r)
+			it.rect = r
+		last_rects = placed
+		for it in items:
+			var u: Unit3D = it.u
+			var r: Rect2 = it.rect
+			var anchor: Vector2 = it.anchor
+			var bar_y := r.end.y - 6.0
+			if bar_y < anchor.y - 3.0:
+				draw_line(Vector2(r.get_center().x, r.end.y), anchor, Color(1, 1, 1, 0.45), 1.0)
+			var cx := r.get_center().x
+			draw_rect(Rect2(cx - BAR_W / 2 - 1, bar_y - 1, BAR_W + 2, 7), Color(0, 0, 0, 0.8))
+			draw_rect(Rect2(cx - BAR_W / 2, bar_y, BAR_W * u.hp_ratio(), 5),
 					Color("4fd06a") if u.is_hero() else Color("e0483c"))
 			var name_color := Color(u.def.color).lightened(0.45) if u.is_hero() else Color(1, 1, 1, 0.9)
-			draw_string_outline(font, Vector2(p.x - 60, p.y - 5), u.def.name, HORIZONTAL_ALIGNMENT_CENTER, 120, 14, 4, Color.BLACK)
-			draw_string(font, Vector2(p.x - 60, p.y - 5), u.def.name, HORIZONTAL_ALIGNMENT_CENTER, 120, 14, name_color)
+			var base := Vector2(cx - 60, bar_y - 4)
+			draw_string_outline(font, base, u.def.name, HORIZONTAL_ALIGNMENT_CENTER, 120, FONT_SIZE, 4, Color.BLACK)
+			draw_string(font, base, u.def.name, HORIZONTAL_ALIGNMENT_CENTER, 120, FONT_SIZE, name_color)
+

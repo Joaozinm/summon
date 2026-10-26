@@ -26,10 +26,12 @@ Arquitetura escolhida: mesma pasta de projeto, cena isolada em `proto3d/`, reapr
 (duplicaria dados, áudio e telas).
 
 ## Câmera
-Pitch fixo de 50°, por trás dos heróis, olhando para o centroide do grupo deslocado 2,5 m para a frente
-(lado inimigo) para caber a luta no retrato; segue com suavização exponencial; ponto de mira preso
-dentro da arena; zoom pela roda/pinça por distância (9–30 m, padrão 17 m); tremor em golpes pesados.
-Sem rotação.
+Pitch fixo de 50°, por trás dos heróis, sem rotação; zoom pela roda/pinça por distância (9–30 m,
+padrão 17 m); mira presa dentro da arena; tremor em golpes pesados.
+**Enquadramento (correção posterior):** a extensão dos heróis na tela (cabeça do mais avançado → anel
+do mais recuado) fica centralizada na faixa livre do HUD, entre o painel do topo e o botão FOCAR.
+Quando o grupo se espalha além dessa faixa, a câmera recua só o necessário (até 30 m), por cima do zoom
+do jogador, e volta à distância escolhida quando o grupo se junta. Pitch e zoom padrão não mudaram.
 
 ## Resultados
 - Lote headless (10 lutas por política, determinístico como a v1):
@@ -55,14 +57,20 @@ Sem rotação.
 ## O que AINDA falta validar antes da arte final
 - **Arte e silhueta reais**: heróis hoje são o mesmo modelo Kenney tingido; a leitura com modelos finais
   diferentes (e sem tinta) precisa ser revalidada.
-- **Rótulos no grupo**: nomes/barras se sobrepõem no corpo a corpo.
-- **Enquadramento no retrato**: com o deslocamento de 2,5 m, o Orin (retaguarda) encosta no botão FOCAR;
-  decidir entre deslocamento menor, câmera mais alta ou HUD mais compacto.
+- **Recuo automático da câmera**: resolve o botão FOCAR, mas recua em ~40–60 % dos frames (até +13 m)
+  quando Orin/Yara ficam longe do grupo. Validar a sensação em mão (pode pedir um teto menor para o
+  recuo ou um HUD mais compacto).
+- **Goblins sob o painel do topo**: o enquadramento prioriza os heróis; goblins à frente ficam sob o
+  painel em ~15–26 % dos frames.
 - **Rotação de câmera** (fora do escopo desta fase) e câmera em paisagem/desktop.
 - **Desempenho**: medir FPS no navegador e em celular real (aqui só desktop + Chrome headless).
 - **Balance 3D**: refazer a medição com variância (frame rate/jogador) como na v1.
 - **Luzes pontuais**: o protótipo usa só direcional + ambiente; se a arte final pedir tochas/omni,
   testar o chão lavado em Compatibility (ressalva da Fase 0).
-- **Tamanho do export 2D**: com `proto3d/` no projeto, o preset "Web" da v1 passa a empacotar também os
-  arquivos do protótipo (pck ~0,4 MB maior). Para excluir, seria preciso mexer no preset 2D
-  (`exclude_filter="proto3d/*"`) — decisão do João.
+
+## Correções (2026-10-26)
+| Correção | Como foi verificada |
+|---|---|
+| Rótulos não se sobrepõem: empilhamento vertical (de baixo para cima; quem colidiria sobe o mínimo, com fio até a cabeça) | sonda por frame em 2 batalhas completas: 0 sobreposições; captura com os 4 heróis + 5 goblins agrupados: 9 rótulos, 0 sobreposições |
+| Nenhum herói no botão FOCAR: enquadramento pela faixa livre do HUD + recuo temporário | sonda por frame: 0 frames com herói sobre o botão/barra (antes: 50 % sem FOCAR, 13 % com FOCAR); reduzir a mira à frente não bastava (0 m ainda deixava 2–16 % dos frames) |
+| Export 2D sem o protótipo: `exclude_filter="proto3d/*"` no preset "Web" | nenhum arquivo de `proto3d/` no pck 2D; v1 roda no navegador sem erros; preset "Web Proto3D" intacto |
