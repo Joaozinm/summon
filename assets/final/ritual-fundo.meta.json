@@ -1,0 +1,10 @@
+{
+  "tool": "media.generate_image (Muse pipeline)",
+  "snapshot_id": "1f962e78-0999-48a9-90ab-c6a2a213503e:kmowjs",
+  "subject": "Ritual chamber background",
+  "colors": "dark stone + blue/gold arcane glow",
+  "style_bible": "Painterly Hades-style: bold dark ink outlines, hand-painted shading, warm saturated colors, original content, no text.",
+  "status": "APPROVED by Muse (reviewed 2026-10-26)",
+  "usage": "res://assets/final/ritual-fundo.webp — full-screen ritual screen background (cards overlay the empty circle)",
+  "note": "Seed not exposed; snapshot_id is the reproducibility handle."
+}

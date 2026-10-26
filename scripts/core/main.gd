@@ -8,6 +8,7 @@ var _ui: CanvasLayer
 
 
 func _ready() -> void:
+	Unit.debug_silhouette = _flag("silhouette")
 	_ui = CanvasLayer.new()
 	_ui.layer = 10
 	add_child(_ui)
@@ -48,3 +49,12 @@ func _clear() -> void:
 	ritual = null
 	battle = null
 	end_screen = null
+
+
+## Debug flag from `-- --<name>` (native) or `?<name>` in the page URL (web).
+static func _flag(name: String) -> bool:
+	if OS.get_cmdline_user_args().has("--" + name):
+		return true
+	if OS.has_feature("web"):
+		return str(JavaScriptBridge.eval("window.location.search", true)).contains(name)
+	return false

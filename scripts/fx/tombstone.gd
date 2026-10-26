@@ -1,7 +1,7 @@
 class_name Tombstone
 extends Node2D
-## PLACEHOLDER TEMPORÁRIO — substituído pela arte final da Muse.
-## Grey headstone from primitives, left where a unit fell.
+## Grey headstone from primitives, left where a unit fell (code-drawn by design; not part of the
+## art delivery).
 
 
 func _draw() -> void:

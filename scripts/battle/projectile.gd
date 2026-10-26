@@ -56,7 +56,12 @@ func _finish() -> void:
 	queue_free()
 
 
-# PLACEHOLDER TEMPORÁRIO — substituído pela arte final da Muse.
+# Code-drawn (not part of the art delivery). Drawn LIFT px above its logical ground position so it
+# flies at chest height next to the sprites; hit-testing still uses the ground position.
+const LIFT := 34.0
+
+
 func _draw() -> void:
+	draw_set_transform(Vector2(0, -LIFT).rotated(-rotation))
 	draw_line(Vector2(-14, 0), Vector2.ZERO, Color(color, 0.5), 3.0)
 	draw_circle(Vector2.ZERO, 4.0, color)

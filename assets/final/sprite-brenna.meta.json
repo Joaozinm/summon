@@ -1,0 +1,10 @@
+{
+  "tool": "media.generate_image (Muse pipeline)",
+  "snapshot_id": "f14e7b5a-650c-4694-9ebc-d3f252575c2a:cdb9mo",
+  "hero": "Brenna, a Guardiã",
+  "colors": "crimson + steel",
+  "style_bible": "Painterly Hades-style: bold dark ink outlines, hand-painted shading, warm saturated colors, full-body angled top-down battle sprite, plain dark background, original character, no text.",
+  "status": "APPROVED by Muse (reviewed 2026-10-26, matches portrait)",
+  "usage": "res://assets/final/sprite-brenna.webp — battle sprite",
+  "note": "Sprite has a dark background, NOT transparency — art-swap phase must handle it (dark arena + blending, or keying shader). Seed not exposed; snapshot_id is the reproducibility handle."
+}
